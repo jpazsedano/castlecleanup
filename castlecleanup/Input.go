@@ -85,7 +85,7 @@ func MakeInputController() InputController {
     return controller
 }
 
-func (c KeyboardInput*) CaptureInput() InputEvent[] {
+func (c *KeyboardInput) CaptureInput() InputEvent[] {
     // Capturamos teclado
     for evID, v := range c.KeyMap {
         if inpututil.IsKeyJustPressed(v) {
@@ -103,13 +103,13 @@ func (c KeyboardInput*) CaptureInput() InputEvent[] {
     // TODO
 }
 
-func (c KeyboardInput*) RegisterEventConsumer(cons EventConsumer, event int) int 
+func (c *KeyboardInput) RegisterEventConsumer(cons EventConsumer, event int) int 
     c.Listeners[event] = append(c.Listeners[event], cons)
     c.LastId++
     cons.SetConsumerId(c.LastId)
 }
 
-func (c KeyboardInput*) UnregisterEventConsumer(consumerId int) bool {
+func (c *KeyboardInput) UnregisterEventConsumer(consumerId int) bool {
     // Para eliminar simplemente recorremos todos los eventos que tienen listener y eliminamos.
     for k, _ := range c.Listeners {
         c.UnregisterFromEvent(consumerId, k)
@@ -117,7 +117,7 @@ func (c KeyboardInput*) UnregisterEventConsumer(consumerId int) bool {
 }
 
 // TODO: Test
-func (c KeyboardInput*) UnregisterFromEvent(consumerId int, event int) bool {
+func (c *KeyboardInput) UnregisterFromEvent(consumerId int, event int) bool {
     // Si la longitud de la lista de consumidores es 1, simplemente lo eliminamos.
     // O también si el elemento no existe.
     if _, ok = c.Listeners[event] ; !ok || len(c.Listeners[event]) <= 1 {
