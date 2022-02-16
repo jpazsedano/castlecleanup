@@ -4,7 +4,6 @@ package main
 import (
     "github.com/hajimehoshi/ebiten/v2"
     "github.com/hajimehoshi/ebiten/v2/inpututil"
-    "fmt"
 )
 
 // Clases que implementen EventConsumer pueden recibir eventos de entrada.
@@ -35,14 +34,14 @@ type KeyEvent struct {
     PressDown bool // true si es KeyDown, false si es KeyUp
 }
 
-func (e KeyEvent*) GetType() string { e.eventId }
+func (e KeyEvent) GetType() int { return e.eventId }
 
 type ClickEvent struct {
     x int
     y int
 }
 
-func (e ClickEvent) GetType() string { Click }
+func (e ClickEvent) GetType() int { return Click }
 
 // Los objetos que implementen esta interfaz deben poder capturar eventos
 // de entrada desde la fuente que sea y devolver los InputEvent correspondientes.
@@ -74,7 +73,7 @@ type KeyboardInput struct {
 
 func MakeInputController() InputController {
     // TODO: Implementar la posibilidad de utilizar otros controladores
-    controller := new(InputController)
+    controller := new(KeyboardInput)
     controller.KeyMap = make(map[int] ebiten.Key)
     controller.Listeners = make(map[int] []EventConsumer)
     controller.LastId = 0
@@ -85,7 +84,7 @@ func MakeInputController() InputController {
     return controller
 }
 
-func (c *KeyboardInput) CaptureInput() InputEvent[] {
+func (c *KeyboardInput) CaptureInput() {
     // Capturamos teclado
     for evID, v := range c.KeyMap {
         if inpututil.IsKeyJustPressed(v) {
@@ -103,10 +102,11 @@ func (c *KeyboardInput) CaptureInput() InputEvent[] {
     // TODO
 }
 
-func (c *KeyboardInput) RegisterEventConsumer(cons EventConsumer, event int) int 
+func (c *KeyboardInput) RegisterEventConsumer(cons EventConsumer, event int) int {
     c.Listeners[event] = append(c.Listeners[event], cons)
     c.LastId++
     cons.SetConsumerId(c.LastId)
+    return c.LastId
 }
 
 func (c *KeyboardInput) UnregisterEventConsumer(consumerId int) bool {
@@ -114,13 +114,14 @@ func (c *KeyboardInput) UnregisterEventConsumer(consumerId int) bool {
     for k, _ := range c.Listeners {
         c.UnregisterFromEvent(consumerId, k)
     }
+    return true
 }
 
 // TODO: Test
 func (c *KeyboardInput) UnregisterFromEvent(consumerId int, event int) bool {
     // Si la longitud de la lista de consumidores es 1, simplemente lo eliminamos.
     // O también si el elemento no existe.
-    if _, ok = c.Listeners[event] ; !ok || len(c.Listeners[event]) <= 1 {
+    if _, ok := c.Listeners[event] ; !ok || len(c.Listeners[event]) <= 1 {
         c.Listeners[event] = []EventConsumer{}
     } else { // Si hay más de un item, hay que encontrar al customer que hay que eliminar.
         for i, v := range c.Listeners[event] {
@@ -128,8 +129,8 @@ func (c *KeyboardInput) UnregisterFromEvent(consumerId int, event int) bool {
             if v.GetConsumerId() == consumerId {
                 c.Listeners[event][i] = c.Listeners[event][len(c.Listeners[event]) -1]
                 c.Listeners[event] = c.Listeners[event][:len(c.Listeners[event]) -1]
-                break
             }
         }
     }
+    return true
 }

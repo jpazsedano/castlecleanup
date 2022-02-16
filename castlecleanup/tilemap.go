@@ -5,7 +5,6 @@ import (
     "image"
     "io"
     "github.com/hajimehoshi/ebiten/v2"
-    "github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Tilemap struct {
@@ -16,12 +15,12 @@ type Tilemap struct {
     tileXNum int
 }
 
-func MakeEmptyTilemap(editMode bool, tiles *ebiten.Image, nLayers int, sizeX int, sizeY int, tileSize int, tileXNum int) {
+func MakeEmptyTilemap(editMode bool, tiles *ebiten.Image, nLayers int, sizeX int, sizeY int, tileSize int, tileXNum int) Tilemap {
     // Inicializamos unos tiles vacíos.
     layers := make([][][]int, sizeY)
     for i := 0; i < nLayers; i++ {
         layers[i] = make([][]int, sizeY)
-        for j := j < sizeY; j++ {
+        for j := 0; j < sizeY; j++ {
             layers[i][j] = make([]int, sizeX)
         }
     }
@@ -42,10 +41,10 @@ func (t *Tilemap) DrawLayer(screen *ebiten.Image, layer int) {
     // Pillamos la capa, y por cada tile que haya que dibujar, lo obtenemos,
     // lo transformamos y lo copiamos a la pantalla.
     for ir, row := range t.layers[layer] {
-        for it, tile := range t.layers[layer][ir] {
+        for it, tile := range row {
             // Seleccionamos el tile. Calculamos las coordenadas según la posicón.
-            xTile := (tile % t.layers.tileXNum) * t.tileSize
-            yTile := (tile / t.layers.tileXNum) * t.tileSize
+            xTile := (tile % t.tileXNum) * t.tileSize
+            yTile := (tile / t.tileXNum) * t.tileSize
             tileImg := t.tiles.SubImage(image.Rect(xTile, yTile, xTile+t.tileSize, yTile+t.tileSize))
             // Dibujamos el tile en la pantalla
             op := &ebiten.DrawImageOptions{}
@@ -60,7 +59,7 @@ func (t *Tilemap) DrawLayer(screen *ebiten.Image, layer int) {
 // (como ningún objeto), si no que los recibe del objeto InputController.
 func (t *Tilemap) ProcessEvent(e InputEvent) bool {
     if t.editMode {
-
+        return true
     }  else { // Si no hay modo edición no se hace nada.
         return true
     }
