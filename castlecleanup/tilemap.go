@@ -15,6 +15,7 @@ type Tilemap struct {
     tileXNum int
 }
 
+// OJO: TileXNum no es el número de tiles en X en pantalla, si no en el recurso.
 func MakeEmptyTilemap(editMode bool, tiles *ebiten.Image, nLayers int, sizeX int, sizeY int, tileSize int, tileXNum int) Tilemap {
     // Inicializamos unos tiles vacíos.
     layers := make([][][]int, sizeY)
@@ -48,7 +49,7 @@ func (t *Tilemap) DrawLayer(screen *ebiten.Image, layer int) {
             tileImg := t.tiles.SubImage(image.Rect(xTile, yTile, xTile+t.tileSize, yTile+t.tileSize))
             // Dibujamos el tile en la pantalla
             op := &ebiten.DrawImageOptions{}
-            op.GeoM.Translate(float64(ir*t.tileSize), float64(it*t.tileSize))
+            op.GeoM.Translate(float64(it*t.tileSize), float64(ir*t.tileSize))
             // Dibujamos en pantalla la imagen casteada con la traslación.
             screen.DrawImage(tileImg.(*ebiten.Image), op)
         }
