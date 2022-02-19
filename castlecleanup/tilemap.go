@@ -12,6 +12,7 @@ type Tilemap struct {
     layers [][][]int; // Tener en cuenta que las coordeadas son [y][x]
     tileSize int
     tileXNum int
+    editorSelectedTile int
 }
 
 // OJO: TileXNum no es el número de tiles en X en pantalla, si no en el recurso.
@@ -24,7 +25,7 @@ func MakeEmptyTilemap(tiles *ebiten.Image, nLayers int, sizeX int, sizeY int, ti
             layers[i][j] = make([]int, sizeX)
         }
     }
-    return Tilemap{tiles, layers, tileSize, tileXNum}
+    return Tilemap{tiles, layers, tileSize, tileXNum, -1}
 }
 
 // Carga un tilemap de fichero, que no es mas que el serializado de las capas.
@@ -34,6 +35,30 @@ func (t *Tilemap) LoadTilemap(tilemapImage image.Image, tilemapData io.Reader) {
 
 func (t *Tilemap) SaveTilemap(writer io.Writer) {
 
+}
+
+func (t *Tilemap) DrawTileSelection(screen *ebiten.Image) {
+    // TODO: Eliminar duplicados..
+    op := &ebiten.DrawImageOptions{}
+    screen.DrawImage(t.tiles, op)
+}
+
+// Esta función debe seleccionar un tile del selector de tiles.
+func (t *Tilemap) ClickTileSelection(x int, y int) {
+    // x e y son coordenadas de pantalla. Es esta clase la que sabe el tamaño
+    // de tile y por lo tanto la que debe traducirla a coordenada de tile.
+
+}
+
+// Esta función debe superponer sobre la imagen el tile que se va a colocar
+// a modo de "pista", añadiendo una transparencia parcial.
+func (t *Tilemap) ShowSelectedTileInMap(screen *ebiten.Image, x int, y int) {
+
+}
+
+// 
+func (t *Tilemap) ChangeTile(x int, y int) bool {
+    return false
 }
 
 // Esta función dibuja una capa del tilemap en la pantalla (o imagen) recibida.

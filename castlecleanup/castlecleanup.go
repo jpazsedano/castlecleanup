@@ -3,6 +3,7 @@ package main
 import (
     "github.com/hajimehoshi/ebiten/v2"
     "github.com/hajimehoshi/ebiten/v2/ebitenutil"
+    "github.com/hajimehoshi/ebiten/v2/inpututil"
     "log"
     _ "embed"
     "image"
@@ -62,6 +63,7 @@ type Game struct {
     tiles Tilemap
     inputController InputController
     debug bool
+    editMode bool
 }
 
 //go:embed assets/Terrain_32x32.png
@@ -82,6 +84,10 @@ func init() {
 func (g *Game) Update() error {
     g.inputController.CaptureInput()
 
+    if g.debug && inpututil.IsKeyJustPressed(ebiten.KeyF1) {
+        g.editMode = !g.editMode
+    }
+
     return nil
 }
 
@@ -92,14 +98,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
         x, y := ebiten.CursorPosition()
         debugMessages = append(debugMessages, fmt.Sprintf("Cursor position: (%d, %d)", x, y))
     }
+    if g.editMode {
+        debugMessages = append(debugMessages, "Edit mode")
+    }
 
-    if g.debug && ebiten.IsKeyPressed(ebiten.KeyF1) {
-        // F1 para modificar el tilemap
-        debugMessages = append(debugMessages, "WiP")
-    } else if g.debug && ebiten.IsKeyPressed(ebiten.KeyF2) {
-        // F2 para objetos del juego
-        debugMessages = append(debugMessages, "Not implemented")
-    }else {
+    if g.editMode && ebiten.IsKeyPressed(ebiten.KeyTab) {
+        // Tecla Tab para modificar el tilemap
+        g.tiles.DrawTileSelection(screen)
+    } else {
         g.tiles.DrawLayer(screen, 0)
     }
 
@@ -115,11 +121,12 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func main() {
     ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
     ebiten.SetWindowTitle("Castle Cleanup")
-    tilemap := Tilemap{tilemapImage, tileValues, 32, 19}
+    tilemap := Tilemap{tilemapImage, tileValues, 32, 19, -1}
 
     controller := MakeInputController()
 
-    game := &Game{tiles: tilemap, inputController: controller, debug: true}
+    // TODO: Hacer un constructor.
+    game := &Game{tiles: tilemap, inputController: controller, debug: true, editMode: false}
 
     if err := ebiten.RunGame(game) ; err != nil {
         log.Fatal(err)
