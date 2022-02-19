@@ -2,13 +2,14 @@ package main
 
 import (
     "github.com/hajimehoshi/ebiten/v2"
-//    "github.com/hajimehoshi/ebiten/v2/ebitenutil"
+    "github.com/hajimehoshi/ebiten/v2/ebitenutil"
     "log"
     _ "embed"
     "image"
-    _ "image/png"
+    _ "image/png" // Importamos pero no usamos para que image pueda decodificar PNGs
     "bytes"
     "fmt"
+    "strings"
 )
 
 const (
@@ -32,15 +33,43 @@ var tileValues = [][][]int{
     },
 }
 
+// Consumer de prueba que captura teclas y lo muestra en pantalla.
+type LoggerKeyboardConsumer struct {
+    consumerId int
+}
+
+func (c *LoggerKeyboardConsumer) GetConsumerId() int{
+    return c.consumerId
+}
+
+func (c *LoggerKeyboardConsumer) SetConsumerId(id int) {
+    c.consumerId = id
+}
+
+func (c *LoggerKeyboardConsumer) ProcessEvent(e InputEvent) bool {
+    if e.GetType() == TilesetShowKey {
+        var iEv KeyEvent = e.(KeyEvent)
+        if iEv.PressDown {
+            log.Println("TilesetShowKey keyDown")
+        } else {
+            log.Println("TilesetShowKey keyUp")
+        }
+    }
+    return true
+}
+
 type Game struct {
     tiles Tilemap
+    inputController InputController
+    debug bool
 }
 
 //go:embed assets/Terrain_32x32.png
 var tileRawImage []byte
-// TODO: Esto no debería ser una variable global.
+// TODO: Hace falta un gestor de recursos de algún tipo.
 var tilemapImage *ebiten.Image
 
+// Usamos init() para cargar los assets.
 func init() {
     img, _, err := image.Decode(bytes.NewReader(tileRawImage))
     if err != nil {
@@ -51,11 +80,32 @@ func init() {
 }
 
 func (g *Game) Update() error {
+    g.inputController.CaptureInput()
+
     return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-    g.tiles.DrawLayer(screen, 0)
+    var debugMessages []string
+    // Esto se hace lo primero.
+    if g.debug {
+        x, y := ebiten.CursorPosition()
+        debugMessages = append(debugMessages, fmt.Sprintf("Cursor position: (%d, %d)", x, y))
+    }
+
+    if g.debug && ebiten.IsKeyPressed(ebiten.KeyF1) {
+        // F1 para modificar el tilemap
+        debugMessages = append(debugMessages, "WiP")
+    } else if g.debug && ebiten.IsKeyPressed(ebiten.KeyF2) {
+        // F2 para objetos del juego
+        debugMessages = append(debugMessages, "Not implemented")
+    }else {
+        g.tiles.DrawLayer(screen, 0)
+    }
+
+    if g.debug {
+        ebitenutil.DebugPrint(screen, strings.Join(debugMessages, "\n"))
+    }
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -65,10 +115,11 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func main() {
     ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
     ebiten.SetWindowTitle("Castle Cleanup")
-    //tilemap := MakeEmptyTilemap(false, tilemapImage, 1, 10, 10, 32)
-    tilemap := Tilemap{false, tilemapImage, tileValues, 32, 19}
+    tilemap := Tilemap{tilemapImage, tileValues, 32, 19}
 
-    game := &Game{tiles: tilemap}
+    controller := MakeInputController()
+
+    game := &Game{tiles: tilemap, inputController: controller, debug: true}
 
     if err := ebiten.RunGame(game) ; err != nil {
         log.Fatal(err)

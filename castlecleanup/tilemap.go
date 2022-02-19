@@ -8,7 +8,6 @@ import (
 )
 
 type Tilemap struct {
-    editMode bool;
     tiles *ebiten.Image;
     layers [][][]int; // Tener en cuenta que las coordeadas son [y][x]
     tileSize int
@@ -16,7 +15,7 @@ type Tilemap struct {
 }
 
 // OJO: TileXNum no es el número de tiles en X en pantalla, si no en el recurso.
-func MakeEmptyTilemap(editMode bool, tiles *ebiten.Image, nLayers int, sizeX int, sizeY int, tileSize int, tileXNum int) Tilemap {
+func MakeEmptyTilemap(tiles *ebiten.Image, nLayers int, sizeX int, sizeY int, tileSize int, tileXNum int) Tilemap {
     // Inicializamos unos tiles vacíos.
     layers := make([][][]int, sizeY)
     for i := 0; i < nLayers; i++ {
@@ -25,7 +24,7 @@ func MakeEmptyTilemap(editMode bool, tiles *ebiten.Image, nLayers int, sizeX int
             layers[i][j] = make([]int, sizeX)
         }
     }
-    return Tilemap{editMode, tiles, layers, tileSize, tileXNum}
+    return Tilemap{tiles, layers, tileSize, tileXNum}
 }
 
 // Carga un tilemap de fichero, que no es mas que el serializado de las capas.
@@ -38,6 +37,8 @@ func (t *Tilemap) SaveTilemap(writer io.Writer) {
 }
 
 // Esta función dibuja una capa del tilemap en la pantalla (o imagen) recibida.
+// Dejamos en manos del código de escena escoger las capas para poder poner unas debajo
+// de los sprites y otras encima. O poder aplicar efectos a capas específicas.
 func (t *Tilemap) DrawLayer(screen *ebiten.Image, layer int) {
     // Pillamos la capa, y por cada tile que haya que dibujar, lo obtenemos,
     // lo transformamos y lo copiamos a la pantalla.
@@ -53,15 +54,5 @@ func (t *Tilemap) DrawLayer(screen *ebiten.Image, layer int) {
             // Dibujamos en pantalla la imagen casteada con la traslación.
             screen.DrawImage(tileImg.(*ebiten.Image), op)
         }
-    }
-}
-
-// El tilemap puede recibir eventos de entrada. No los captura él mismo
-// (como ningún objeto), si no que los recibe del objeto InputController.
-func (t *Tilemap) ProcessEvent(e InputEvent) bool {
-    if t.editMode {
-        return true
-    }  else { // Si no hay modo edición no se hace nada.
-        return true
     }
 }

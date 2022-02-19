@@ -36,13 +36,6 @@ type KeyEvent struct {
 
 func (e KeyEvent) GetType() int { return e.eventId }
 
-type ClickEvent struct {
-    x int
-    y int
-}
-
-func (e ClickEvent) GetType() int { return Click }
-
 // Los objetos que implementen esta interfaz deben poder capturar eventos
 // de entrada desde la fuente que sea y devolver los InputEvent correspondientes.
 type InputController interface {
@@ -58,7 +51,7 @@ type InputController interface {
 
 // Claves de los eventos en 
 const TilesetShowKey = 1
-const Click = 2
+const SaveTilesetKey = 2
 
 // Este struct se encarga de guardar el mapeo de los controles, de manera
 // sus métodos de captura de eventos pueden saber a qué evento de juego
@@ -79,6 +72,7 @@ func MakeInputController() InputController {
     controller.LastId = 0
 
     // Asignamos los eventos a las teclas.
+    // TODO: Hacer esto de manera dinámica.
     controller.KeyMap[TilesetShowKey] = ebiten.KeyF1
 
     return controller
@@ -98,8 +92,6 @@ func (c *KeyboardInput) CaptureInput() {
             }
         }
     }
-    // Capturamos clicks
-    // TODO
 }
 
 func (c *KeyboardInput) RegisterEventConsumer(cons EventConsumer, event int) int {
