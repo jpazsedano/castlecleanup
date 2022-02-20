@@ -81,11 +81,34 @@ func init() {
     tilemapImage = ebiten.NewImageFromImage(img)
 }
 
+func (g *Game) processEditInput() {
+    // Esto captura los clicks y algunas pulsaciones de tecla si estamos en modo edición
+    if !g.editMode { // Re-comprobación por si se me olvida en el código de más arriba.
+        return
+    }
+    x, y := ebiten.CursorPosition()
+    // Los clicks dependen de la interfaz que haya activada.
+    if ebiten.IsKeyPressed(ebiten.KeyDigit1) {
+        if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+            g.tiles.ClickTileSelection(x, y)
+        }
+    } else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+        // Si no hay nada pulsado, pasarle el evento al modificador.
+        g.tiles.ChangeTile(x, y)
+    }
+}
+
 func (g *Game) Update() error {
     g.inputController.CaptureInput()
 
+    // Activamos o desactivamos el modo edición
     if g.debug && inpututil.IsKeyJustPressed(ebiten.KeyF1) {
         g.editMode = !g.editMode
+    }
+
+    // Si estamos en modo edición, procesamos la entrada de edición.
+    if g.editMode {
+        g.processEditInput()
     }
 
     return nil
@@ -102,7 +125,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
         debugMessages = append(debugMessages, "Edit mode")
     }
 
-    if g.editMode && ebiten.IsKeyPressed(ebiten.KeyTab) {
+    if g.editMode && ebiten.IsKeyPressed(ebiten.KeyDigit1) {
         // Tecla Tab para modificar el tilemap
         g.tiles.DrawTileSelection(screen)
     } else {
