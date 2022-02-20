@@ -4,10 +4,17 @@ package main
 import (
     "image"
     "image/color"
-    "io"
     "github.com/hajimehoshi/ebiten/v2"
     "github.com/hajimehoshi/ebiten/v2/ebitenutil"
+    "encoding/gob"
+    "io"
 )
+
+type SerializableTilemap struct {
+    Layers [][][]int
+    TileSize int
+    TileXNum int
+}
 
 type Tilemap struct {
     tiles *ebiten.Image;
@@ -30,13 +37,14 @@ func MakeEmptyTilemap(tiles *ebiten.Image, nLayers int, sizeX int, sizeY int, ti
     return Tilemap{tiles, layers, tileSize, tileXNum, -1}
 }
 
-// Carga un tilemap de fichero, que no es mas que el serializado de las capas.
-func (t *Tilemap) LoadTilemap(tilemapImage image.Image, tilemapData io.Reader) {
-
+func (t *Tilemap) Serialize(buffer io.Writer) error {
+    enc := gob.NewEncoder(buffer)
+    return enc.Encode(t.layers)
 }
 
-func (t *Tilemap) SaveTilemap(writer io.Writer) {
-
+func (t *Tilemap) Deserialize(buffer io.Reader) error {
+    dec := gob.NewDecoder(buffer)
+    return dec.Decode(&t.layers)
 }
 
 func (t *Tilemap) DrawTileSelection(screen *ebiten.Image) {

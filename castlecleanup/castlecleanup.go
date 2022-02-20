@@ -11,6 +11,7 @@ import (
     "bytes"
     "fmt"
     "strings"
+    "os"
 )
 
 const (
@@ -104,6 +105,27 @@ func (g *Game) Update() error {
     // Activamos o desactivamos el modo edición
     if g.debug && inpututil.IsKeyJustPressed(ebiten.KeyF1) {
         g.editMode = !g.editMode
+    }
+    if g.debug && inpututil.IsKeyJustPressed(ebiten.KeyF2) {
+        // Con F2 hacemos un guardado rápido del nivel.
+        f, err := os.Create("level.dat")
+        if err != nil {
+            log.Println("Error saving level: ", err)
+        }
+        serErr := g.tiles.Serialize(f)
+        if serErr != nil {
+            log.Println("Error serializing level: ", serErr)
+        }
+    } else if g.debug && inpututil.IsKeyJustPressed(ebiten.KeyF3) {
+        f, err := os.Open("level.dat")
+        if err != nil {
+            log.Println("Error loading level: ", err)
+        } else {
+            desErr := g.tiles.Deserialize(f)
+            if desErr != nil{
+                log.Println("Invalid level at level.dat", desErr)
+            }
+        }
     }
 
     // Si estamos en modo edición, procesamos la entrada de edición.
