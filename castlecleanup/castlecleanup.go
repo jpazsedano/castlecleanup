@@ -3,7 +3,6 @@ package main
 import (
     "github.com/hajimehoshi/ebiten/v2"
     "log"
-    _ "image/png" // Importamos pero no usamos para que image pueda decodificar PNGs
 )
 
 const (

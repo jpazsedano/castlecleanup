@@ -3,6 +3,7 @@ package main
 import (
     "errors"
     "image"
+    _ "image/png" // Importamos pero no usamos para que image pueda decodificar PNGs
     "bytes"
     "fmt"
     "os"
@@ -42,7 +43,7 @@ type Level struct {
 // Esta función carga los assets necesarios y construye el nivel.
 // En niveles grandes puede que necesite una pantalla de carga.
 func MakeLevel(tilemapRes string, debug bool) (*Level, error) {
-    tilemapBytes, ok := Resources[tilemapRes] ;
+    tilemapBytes, ok := AM_RESOURCES[tilemapRes] ;
     if !ok {
         return nil, errors.New("Resource not found")
     }
