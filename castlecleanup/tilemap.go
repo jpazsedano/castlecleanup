@@ -47,6 +47,7 @@ func (t *Tilemap) Deserialize(buffer io.Reader) error {
     return dec.Decode(&t.layers)
 }
 
+// Dibuja la pantalla de selección de tile (sólo edición)
 func (t *Tilemap) DrawTileSelection(screen *ebiten.Image) {
     // TODO: Eliminar duplicados..
     op := &ebiten.DrawImageOptions{}
