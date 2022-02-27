@@ -10,14 +10,16 @@ import (
     "bytes"
 )
 
-type EntityType int64
-
 const (
-    ENTITY_BOX EntityType = iota
+    ENTITY_BOX int = iota
+    ENTITY_BOMB
 )
 
-var ENTITY_ASSIGNATIONS = map[EntityType]string{
+const NUM_ENTITIES = 2
+
+var ENTITY_ASSIGNATIONS = map[int]string{
     ENTITY_BOX: BOX_IDLE,
+    ENTITY_BOMB: BOMB_OFF,
 }
 
 // Interfaz básica de Entidad
@@ -25,6 +27,10 @@ type BaseEntity interface {
     Update() error
     Draw(screen *ebiten.Image)
     CheckPosition(x int, y int) bool
+    GetPosition() (float64, float64)
+    SetPosition(x float64, y float64)
+    Move(x float64, y float64)
+    GetImage() *ebiten.Image
 }
 
 // EntityManager se encarga de lanzar las llamadas a Update y Draw de las
@@ -35,7 +41,7 @@ type EntityManager struct {
     resources map[string]*ebiten.Image
 
     // Representa la lista de imágenes para la edición de las entidades.
-    availableEntities map[EntityType]*ebiten.Image
+    availableEntities map[int]*ebiten.Image
     entitySelected int
 
     lastid int
@@ -62,7 +68,7 @@ func MakeEntityManager() (*EntityManager, error) {
         em.resources[resName] = ebiten.NewImageFromImage(img)
     }
 
-    em.availableEntities = make(map[EntityType]*ebiten.Image)
+    em.availableEntities = make(map[int]*ebiten.Image)
     // Rellenamos availableEntities con los sprites recién cargados
     for id, resource := range ENTITY_ASSIGNATIONS {
         em.availableEntities[id] = createEditImage(em.resources[resource])
@@ -109,8 +115,8 @@ func (em *EntityManager) DeleteEntity(entityID int) bool {
 // Funciones de edición
 
 // Esta función devuelve la lista de entidades disponibles.
-func (em *EntityManager) getEntityList() []EntityType {
-    keys := make([]EntityType, len(em.availableEntities))
+func (em *EntityManager) getEntityList() []int {
+    keys := make([]int, len(em.availableEntities))
     i := 0
     for key, _ := range em.availableEntities {
         keys[i] = key
@@ -150,7 +156,7 @@ func (em *EntityManager) ScrollEntity(dir int) {
     em.entitySelected = em.entitySelected % len(em.availableEntities)
 }
 
-func (em *EntityManager) SpawnByID(x int, y int, id EntityType) error {
+func (em *EntityManager) SpawnByID(x int, y int, id int) error {
     // Hardcodeamos la manera de inicializar cada entidad.
     switch id {
     case ENTITY_BOX:
@@ -159,14 +165,28 @@ func (em *EntityManager) SpawnByID(x int, y int, id EntityType) error {
         if err != nil {
             return err
         }
+        imgW, imgH := entity.GetImage().Size()
+        entity.Move(float64(-imgW/2), float64(-imgH/2))
+        em.SpawnEntity(entity)
+    case ENTITY_BOMB:
+        entity, err := em.CreateEntity(x, y, BOMB_OFF)
+        if err != nil {
+            return err
+        }
+        imgW, imgH := entity.GetImage().Size()
+        entity.Move(float64(-imgW/2), float64(-imgH/2))
         em.SpawnEntity(entity)
     }
     return nil
 }
 
-func (em *EntityManager) GetSelectedEntityType() EntityType {
-    entities := em.getEntityList()
-    return entities[em.entitySelected]
+func (em *EntityManager) GetSelectedEntityType() int {
+    return em.entitySelected
+}
+
+func (em *EntityManager) GetSelectedEntityImage() *ebiten.Image {
+    selected := em.GetSelectedEntityType()
+    return em.availableEntities[selected]
 }
 
 // Funciones de game loop
@@ -211,6 +231,22 @@ func (e *Entity) CheckPosition(x int, y int) bool {
     fx := float64(x)
     fy := float64(y)
     return fx >= e.X && fx <= (e.X + float64(imgWidth)) && fy >= e.Y && (fy <= e.Y + float64(imgHeight))
+}
+
+func (e *Entity) GetPosition() (float64, float64) {
+    return e.X, e.Y
+}
+
+func (e *Entity) SetPosition(x float64, y float64) {
+    e.X = x
+    e.Y = y
+}
+func (e *Entity) Move(x float64, y float64) {
+    e.X += x
+    e.Y += y
+}
+func (e *Entity) GetImage() *ebiten.Image {
+    return e.image
 }
 
 // Una entidad sólida es una entidad que sigue sin moverse pero

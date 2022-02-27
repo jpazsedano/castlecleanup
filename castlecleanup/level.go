@@ -66,12 +66,14 @@ func MakeLevel(tilemapRes string, debug bool) (*Level, error) {
     tilemapImage := ebiten.NewImageFromImage(img)
     tilemap := Tilemap{tilemapImage, tileValues, 32, 19, -1}
     controller := MakeInputController()
+    entityManager, _ := MakeEntityManager()
     
     var level *Level = &Level{
         tiles: tilemap,
         inputController: controller,
         debug: debug,
         editMode: false,
+        enManager: *entityManager,
     }
 
     return level, nil
@@ -116,7 +118,9 @@ func (l *Level) processEditInput() {
     case EDIT_ENTITIES:
         // Si se mueve la rueda, se cambia la entidad seleccionada.
         _, wy := ebiten.Wheel()
-        l.enManager.ScrollEntity(int(wy))
+        if wy != 0 {
+            l.enManager.ScrollEntity(int(wy))
+        }
 
         if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
             selectedType := l.enManager.GetSelectedEntityType()
@@ -183,10 +187,27 @@ func (l *Level) Draw(screen *ebiten.Image) {
     }
 
     if l.editMode && ebiten.IsKeyPressed(ebiten.KeyDigit1) {
-        // Tecla Tab para modificar el tilemap
+        // Tecla 1 para mostrar la selección de tiles
         l.tiles.DrawTileSelection(screen)
     } else {
         l.tiles.DrawLayer(screen, 0)
+        l.enManager.Draw(screen)
+
+        // Tras dibujar los tiles y las entidades, mostramos la interfaz.
+        // Interfaz de edición.
+        if l.editMode && l.editSelection == EDIT_ENTITIES {
+            // Si estamos en modo edición de entidades, mostramos en una esquina
+            // la entidad seleccionada.
+            img := l.enManager.GetSelectedEntityImage()
+            op := &ebiten.DrawImageOptions{}
+            // Buscamos la coordanda inferior derecha.
+            screenW, screenH := screen.Size()
+            imgW, imgH := img.Size()
+            imgX := screenW - imgW
+            imgY := screenH - imgH
+            op.GeoM.Translate(float64(imgX), float64(imgY))
+            screen.DrawImage(img, op)
+        }
     }
 
     if l.debug {
