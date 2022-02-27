@@ -36,8 +36,16 @@ type EntityManager struct {
 
     // Representa la lista de imágenes para la edición de las entidades.
     availableEntities map[EntityType]*ebiten.Image
+    entitySelected int
 
     lastid int
+}
+
+// Esta función está pensada para crear una imagen de edición
+// diferente del recurso original, sin embargo ahora mismo sólo
+// devuelve el mismo valor.
+func createEditImage(src *ebiten.Image) *ebiten.Image {
+    return src
 }
 
 func MakeEntityManager() (*EntityManager, error) {
@@ -57,7 +65,7 @@ func MakeEntityManager() (*EntityManager, error) {
     em.availableEntities = make(map[EntityType]*ebiten.Image)
     // Rellenamos availableEntities con los sprites recién cargados
     for id, resource := range ENTITY_ASSIGNATIONS {
-        em.availableEntities[id] = em.resources[resource]
+        em.availableEntities[id] = createEditImage(em.resources[resource])
     }
 
     return em, nil
@@ -76,7 +84,7 @@ func (em *EntityManager) CreateEntity(x int, y int, resource string) (BaseEntity
         return nil, errors.New(fmt.Sprintf("Resource %s not found", resource))
     }
     
-    return &Entity{res, x, y}, nil
+    return &Entity{res, float64(x), float64(y)}, nil
 }
 
 // Registra una entidad en el manager. Normalmente es una subclase que ha utilizado
@@ -114,7 +122,7 @@ func (em *EntityManager) getEntityList() []EntityType {
 // Devuelve el identificador de la entidad ubicada en las coordenadas dadas.
 // Las coordenadas deben ser coordenadas de mundo, no de pantalla.
 // Devuelve -1 si no se ha encontrado ninguna entidad en las coordenadas dadas.
-func (em *EntityManager) getEntityIDAt(x int, y int) int {
+func (em *EntityManager) GetEntityIDAt(x int, y int) int {
     for id, entity := range em.entities {
         if entity.CheckPosition(x, y) {
             return id
@@ -122,6 +130,43 @@ func (em *EntityManager) getEntityIDAt(x int, y int) int {
     }
     // No se ha encontrado ninguna entidad.
     return -1
+}
+
+func (em *EntityManager) ScrollEntity(dir int) {
+    // Normalizamos la dirección
+    var dScroll int = 0
+    if dir < 0 {
+        dScroll = -1
+    } else if dir > 0 {
+        dScroll = 1
+    }
+
+    em.entitySelected += dScroll
+    // Si es menor que 0, volvemos al final
+    if em.entitySelected < 0 {
+        em.entitySelected = len(em.availableEntities) - 1
+    }
+    // Nos aseguramos 
+    em.entitySelected = em.entitySelected % len(em.availableEntities)
+}
+
+func (em *EntityManager) SpawnByID(x int, y int, id EntityType) error {
+    // Hardcodeamos la manera de inicializar cada entidad.
+    switch id {
+    case ENTITY_BOX:
+        // La caja será un SolidEntity cuando esté implementado, por el momento sólo es una entidad normal
+        entity, err := em.CreateEntity(x, y, BOX_IDLE)
+        if err != nil {
+            return err
+        }
+        em.SpawnEntity(entity)
+    }
+    return nil
+}
+
+func (em *EntityManager) GetSelectedEntityType() EntityType {
+    entities := em.getEntityList()
+    return entities[em.entitySelected]
 }
 
 // Funciones de game loop
@@ -145,12 +190,15 @@ func (em *EntityManager) Draw(screen *ebiten.Image) {
 type Entity struct {
     // Referencia para compratir recurso entre entidades similares.
     image *ebiten.Image
-    X int
-    Y int
+    X float64
+    Y float64
 }
 
 func (e *Entity) Draw(screen *ebiten.Image) {
-
+    // Implementación básica, simplemente dibujamos la imagen en pantalla.
+    op := &ebiten.DrawImageOptions{}
+    op.GeoM.Translate(e.X, e.Y)
+    screen.DrawImage(e.image, op)
 }
 
 // Como la entidad es estática, al actualizar no hace nada
@@ -160,7 +208,9 @@ func (e *Entity) Update() error { return nil }
 // Si x e y es la posición del ratón, comprueba si el ratón está sobre la entidad.
 func (e *Entity) CheckPosition(x int, y int) bool {
     imgWidth, imgHeight := e.image.Size()
-    return x >= e.X && x <= (e.X + imgWidth) && y >= e.Y && (y <= e.Y + imgHeight)
+    fx := float64(x)
+    fy := float64(y)
+    return fx >= e.X && fx <= (e.X + float64(imgWidth)) && fy >= e.Y && (fy <= e.Y + float64(imgHeight))
 }
 
 // Una entidad sólida es una entidad que sigue sin moverse pero

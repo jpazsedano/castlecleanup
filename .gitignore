@@ -4,5 +4,3 @@ examples
 todo
 dist
 *.dat
-go.sum
-go.mod

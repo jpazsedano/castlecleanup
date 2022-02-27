@@ -31,6 +31,13 @@ var tileValues = [][][]int{
     },
 }
 
+type EditSelection int
+
+const (
+    EDIT_MAP EditSelection = iota
+    EDIT_ENTITIES
+)
+
 // Esto encapsula la lógica asociada a un nivel y la separa
 // de la lógica de los menús, por ejemplo
 type Level struct {
@@ -39,6 +46,8 @@ type Level struct {
     inputController InputController
     debug bool
     editMode bool
+
+    editSelection EditSelection
 }
 
 // Esta función carga los assets necesarios y construye el nivel.
@@ -68,20 +77,55 @@ func MakeLevel(tilemapRes string, debug bool) (*Level, error) {
     return level, nil
 }
 
+func (l *Level) switchEditMode() {
+    switch {
+    case inpututil.IsKeyJustPressed(ebiten.KeyDigit1):
+        log.Println("'Edit Map' mode selected")
+        l.editSelection = EDIT_MAP
+    case inpututil.IsKeyJustPressed(ebiten.KeyDigit2):
+        log.Println("'Edit Entities' mode selected")
+        l.editSelection = EDIT_ENTITIES
+    }
+}
+
+// Esta función se encarga de gestionar toda la lógica perteneciente al editor.
+// capturando los eventos y cambiando el estado interno del nivel (de las propiedades
+// de edición) y de llamar a los métodos de edición de los subobjetos.
 func (l *Level) processEditInput() {
     // Esto captura los clicks y algunas pulsaciones de tecla si estamos en modo edición
     if !l.editMode { // Re-comprobación por si se me olvida en el código de más arriba.
         return
     }
+    // TODO: Cuando haya scroll habrá que transformar estas coordenadas.
     x, y := ebiten.CursorPosition()
-    // Los clicks dependen de la interfaz que haya activada.
-    if ebiten.IsKeyPressed(ebiten.KeyDigit1) {
-        if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-            l.tiles.ClickTileSelection(x, y)
+
+    // Primero gestionamos el modo
+    l.switchEditMode()
+
+    switch l.editSelection {
+    case EDIT_MAP:
+        // Los clicks dependen de la interfaz que haya activada.
+        if ebiten.IsKeyPressed(ebiten.KeyDigit1) {
+            if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+                l.tiles.ClickTileSelection(x, y)
+            }
+        } else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+            // Si no hay nada pulsado, pasarle el evento al modificador.
+            l.tiles.ChangeTile(x, y)
         }
-    } else if ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
-        // Si no hay nada pulsado, pasarle el evento al modificador.
-        l.tiles.ChangeTile(x, y)
+    case EDIT_ENTITIES:
+        // Si se mueve la rueda, se cambia la entidad seleccionada.
+        _, wy := ebiten.Wheel()
+        l.enManager.ScrollEntity(int(wy))
+
+        if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+            selectedType := l.enManager.GetSelectedEntityType()
+            l.enManager.SpawnByID(x, y, selectedType)
+        }
+        if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
+            entityID := l.enManager.GetEntityIDAt(x, y)
+            l.enManager.DeleteEntity(entityID)
+        }
     }
 }
 
