@@ -8,6 +8,8 @@ import (
 )
 
 // Hitbox se encarga de comprobar colisiones con otras hitboxes
+// ATENCIÓN: Parece que buena parte de esta funcionalidad ya está implementada
+// en image.Rectangle
 type Hitbox struct {
     X int
     Y int

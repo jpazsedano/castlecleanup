@@ -35,6 +35,7 @@ var tileValues = [][][]int{
 // de la lógica de los menús, por ejemplo
 type Level struct {
     tiles Tilemap
+    enManager EntityManager
     inputController InputController
     debug bool
     editMode bool
