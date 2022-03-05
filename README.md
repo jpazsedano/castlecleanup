@@ -1,5 +1,4 @@
 # Castle Cleanup
 
-Pequeño juego desarrollado para la [Winter Game Jam de OpenGameArt.org](https://itch.io/jam/opengameart-winter-game-jam-2022)
-
-
+Pequeño juego de plataformas y acción en el que el protagonista debe limpiar
+su castillo invadido por unos cerdos.

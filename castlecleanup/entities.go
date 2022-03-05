@@ -156,9 +156,10 @@ func (em *EntityManager) ScrollEntity(dir int) {
     em.entitySelected = em.entitySelected % len(em.availableEntities)
 }
 
-func (em *EntityManager) SpawnByID(x int, y int, id int) error {
+// Hace spawn de un elemento según su tipo (representado por el ID)
+func (em *EntityManager) SpawnByType(x int, y int, e_type int) error {
     // Hardcodeamos la manera de inicializar cada entidad.
-    switch id {
+    switch e_type {
     case ENTITY_BOX:
         // La caja será un SolidEntity cuando esté implementado, por el momento sólo es una entidad normal
         entity, err := em.CreateEntity(x, y, BOX_IDLE)

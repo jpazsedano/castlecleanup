@@ -124,7 +124,7 @@ func (l *Level) processEditInput() {
 
         if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
             selectedType := l.enManager.GetSelectedEntityType()
-            l.enManager.SpawnByID(x, y, selectedType)
+            l.enManager.SpawnByType(x, y, selectedType)
         }
         if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) {
             entityID := l.enManager.GetEntityIDAt(x, y)
