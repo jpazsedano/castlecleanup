@@ -90,7 +90,7 @@ func (em *EntityManager) CreateEntity(x int, y int, resource string) (BaseEntity
         return nil, errors.New(fmt.Sprintf("Resource %s not found", resource))
     }
     
-    return &Entity{res, float64(x), float64(y)}, nil
+    return &Sprite{res, float64(x), float64(y)}, nil
 }
 
 // Registra una entidad en el manager. Normalmente es una subclase que ha utilizado
@@ -127,7 +127,7 @@ func (em *EntityManager) getEntityList() []int {
 
 // Devuelve el identificador de la entidad ubicada en las coordenadas dadas.
 // Las coordenadas deben ser coordenadas de mundo, no de pantalla.
-// Devuelve -1 si no se ha encontrado ninguna entidad en las coordenadas dadas.
+// Devuelve -1 si no se ha encontrado ninguna entidad en dichas coordenadas.
 func (em *EntityManager) GetEntityIDAt(x int, y int) int {
     for id, entity := range em.entities {
         if entity.CheckPosition(x, y) {
@@ -138,6 +138,7 @@ func (em *EntityManager) GetEntityIDAt(x int, y int) int {
     return -1
 }
 
+// Esta función de edición selecciona cambia la selección de la entidad a hacer aparecer.
 func (em *EntityManager) ScrollEntity(dir int) {
     // Normalizamos la dirección
     var dScroll int = 0
@@ -156,12 +157,12 @@ func (em *EntityManager) ScrollEntity(dir int) {
     em.entitySelected = em.entitySelected % len(em.availableEntities)
 }
 
-// Hace spawn de un elemento según su tipo (representado por el ID)
+// Hace spawn de un elemento según su tipo
 func (em *EntityManager) SpawnByType(x int, y int, e_type int) error {
     // Hardcodeamos la manera de inicializar cada entidad.
     switch e_type {
     case ENTITY_BOX:
-        // La caja será un SolidEntity cuando esté implementado, por el momento sólo es una entidad normal
+        // La caja será un SolidSprite cuando esté implementado, por el momento sólo es una entidad normal
         entity, err := em.CreateEntity(x, y, BOX_IDLE)
         if err != nil {
             return err
@@ -181,10 +182,12 @@ func (em *EntityManager) SpawnByType(x int, y int, e_type int) error {
     return nil
 }
 
+// Devuelve el tipo de entidad seleccionada (que se puede cambiar con ScrollEntity)
 func (em *EntityManager) GetSelectedEntityType() int {
     return em.entitySelected
 }
 
+// Devuelve una imagen representativa de la entidad seleccionada.
 func (em *EntityManager) GetSelectedEntityImage() *ebiten.Image {
     selected := em.GetSelectedEntityType()
     return em.availableEntities[selected]
@@ -200,22 +203,25 @@ func (em *EntityManager) Update() error {
     }
     return nil
 }
+// FIXME: Error en el interior.
 func (em *EntityManager) Draw(screen *ebiten.Image) {
+    // FIXME: Esto no funciona, range no respeta ningún orden concreto y
+    // si dos entidades se solapan, parpadean. Hay que usar algo que respete orden.
     for _, e := range em.entities {
         e.Draw(screen)
     }
 }
 
-// Implementación de Entity para ser heredada por subclases y que compartan
+// Implementación de Sprite para ser heredada por subclases y que compartan
 // código básico de dibujado en pantalla, pero no se mueve ni interactúa.
-type Entity struct {
+type Sprite struct {
     // Referencia para compratir recurso entre entidades similares.
     image *ebiten.Image
     X float64
     Y float64
 }
 
-func (e *Entity) Draw(screen *ebiten.Image) {
+func (e *Sprite) Draw(screen *ebiten.Image) {
     // Implementación básica, simplemente dibujamos la imagen en pantalla.
     op := &ebiten.DrawImageOptions{}
     op.GeoM.Translate(e.X, e.Y)
@@ -223,41 +229,105 @@ func (e *Entity) Draw(screen *ebiten.Image) {
 }
 
 // Como la entidad es estática, al actualizar no hace nada
-func (e *Entity) Update() error { return nil }
+func (e *Sprite) Update() error { return nil }
 
 // Esta función comprueba si una posición está dentro de la imagen de la entidad.
 // Si x e y es la posición del ratón, comprueba si el ratón está sobre la entidad.
-func (e *Entity) CheckPosition(x int, y int) bool {
+func (e *Sprite) CheckPosition(x int, y int) bool {
     imgWidth, imgHeight := e.image.Size()
     fx := float64(x)
     fy := float64(y)
     return fx >= e.X && fx <= (e.X + float64(imgWidth)) && fy >= e.Y && (fy <= e.Y + float64(imgHeight))
 }
 
-func (e *Entity) GetPosition() (float64, float64) {
+func (e *Sprite) GetPosition() (float64, float64) {
     return e.X, e.Y
 }
 
-func (e *Entity) SetPosition(x float64, y float64) {
+func (e *Sprite) SetPosition(x float64, y float64) {
     e.X = x
     e.Y = y
 }
-func (e *Entity) Move(x float64, y float64) {
+func (e *Sprite) Move(x float64, y float64) {
     e.X += x
     e.Y += y
 }
-func (e *Entity) GetImage() *ebiten.Image {
+func (e *Sprite) GetImage() *ebiten.Image {
     return e.image
+}
+
+// Construye un SolidSprite con su hitbox a partir de un Sprite y las
+// coordenadas de su rectángulo.
+func MakeSolidSpite(sprite Sprite, x0, y0, x1, y1 int) {
+    x := int(sprite.X)
+    y := int(sprite.Y)
+    hBox := image.Rect(x0 + x, y0 + y, x1 + x, y1 + y)
 }
 
 // Una entidad sólida es una entidad que sigue sin moverse pero
 // puede interactuar por contacto con otros elementos
-type SolidEntity struct {
-    Entity
-    Hbox Hitbox
+type SolidSprite struct {
+    Sprite
+    Hbox image.Rectangle
 }
 
+// Establece la nueva posición del sprite
+func (s *SolidSprite) SetPosition(x float64, y float64) {
+    boxWidth := s.Hbox.Dx()
+    boxHeight := s.Hbox.Dy()
+    // El desplazamiento de la caja con respecto a la posición del sprite.
+    boxXdesp := s.Hbox.Min.X - int(s.Sprite.X)
+    boxYdesp := s.Hbox.Min.Y - int(s.Sprite.Y)
+    // Movemos el sprite
+    s.Sprite.SetPosition(x, y)
+    // Y movemos la caja.
+    s.Hbox.Min.X = int(x) + boxXdesp
+    s.Hbox.Min.Y = int(y) + boxYdesp
+    s.Hbox.Max.X = int(x) + boxXdesp + boxWidth
+    s.Hbox.Max.Y = int(y) + boxYdesp + boxHeight
+}
+
+// Desplaza el sprite.
+func (s *SolidSprite) Move(x float64, y float64) {
+    currentX := s.Sprite.X
+    currentY := s.Sprite.Y
+    s.SetPosition(currentX + x, currentY + y)
+}
+
+type Action struct {
+    action string
+    modifier float64
+}
+
+// Las estructuras que implementen esta interfaz podrán recibir eventos de
+// control.
+type ControlableSprite interface {
+    // Encola acciones para ser realizadas todas a la vez cuando se llame a
+    // la función Update
+    EnqueueAction(action Action) bool
+
+    // Devuelve una lista de las acciones posibles.
+    GetActions() []string
+}
+
+// Construye un personaje a partir de un SolidSprite
+func MakeCharacter(sprite SolidSprite) {
+
+}
 
 type Character struct {
-    SolidEntity
+    SolidSprite
+
+    // Lo definimos como estático porque 
+    possibleActions []string = []string{"moveX", "moveY"}
+
+    actionQueue []Action
+}
+
+func (c *Character) EnqueueAction(action Action) bool {
+    c.actionQueue = append(c.actionQueue, action)
+}
+
+func (c *Character) GetActions() []string {
+    return c.possibleActions
 }
