@@ -8,6 +8,8 @@ import (
     "image"
     _ "image/png"
     "bytes"
+
+    "github.com/jpazsedano/castlecleanup/inputmanager"
 )
 
 const (
@@ -258,10 +260,12 @@ func (e *Sprite) GetImage() *ebiten.Image {
 
 // Construye un SolidSprite con su hitbox a partir de un Sprite y las
 // coordenadas de su rectángulo.
-func MakeSolidSpite(sprite Sprite, x0, y0, x1, y1 int) {
+func MakeSolidSpite(sprite Sprite, x0, y0, x1, y1 int) *SolidSprite {
     x := int(sprite.X)
     y := int(sprite.Y)
     hBox := image.Rect(x0 + x, y0 + y, x1 + x, y1 + y)
+
+    return &SolidSprite{sprite, hBox}
 }
 
 // Una entidad sólida es una entidad que sigue sin moverse pero
@@ -294,17 +298,12 @@ func (s *SolidSprite) Move(x float64, y float64) {
     s.SetPosition(currentX + x, currentY + y)
 }
 
-type Action struct {
-    action string
-    modifier float64
-}
-
 // Las estructuras que implementen esta interfaz podrán recibir eventos de
 // control.
 type ControlableSprite interface {
     // Encola acciones para ser realizadas todas a la vez cuando se llame a
     // la función Update
-    EnqueueAction(action Action) bool
+    EnqueueAction(action inputmanager.Action) bool
 
     // Devuelve una lista de las acciones posibles.
     GetActions() []string
@@ -312,20 +311,21 @@ type ControlableSprite interface {
 
 // Construye un personaje a partir de un SolidSprite
 func MakeCharacter(sprite SolidSprite) {
-
+    //= []string{"moveX", "moveY"}
 }
 
 type Character struct {
     SolidSprite
 
     // Lo definimos como estático porque 
-    possibleActions []string = []string{"moveX", "moveY"}
+    possibleActions []string
 
-    actionQueue []Action
+    actionQueue []inputmanager.Action
 }
 
-func (c *Character) EnqueueAction(action Action) bool {
+func (c *Character) EnqueueAction(action inputmanager.Action) bool {
     c.actionQueue = append(c.actionQueue, action)
+    return true // TODO: Devolver valor según el resultado.
 }
 
 func (c *Character) GetActions() []string {
