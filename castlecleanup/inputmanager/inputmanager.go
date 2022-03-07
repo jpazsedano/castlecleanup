@@ -26,7 +26,7 @@ const (
     MAIN_AXIS_H AXIS_ID = iota
     MAIN_AXIS_V
     SECONDARY_AXIS_H
-    SECONDRAY_AXIS_V
+    SECONDARY_AXIS_V
     LT_AXIS
     RT_AXIS
 )
@@ -39,6 +39,10 @@ const (
 )
 
 const STICK_DEAD_ZONE = 0.3
+
+func AvailableActions() []string {
+    return []string{MOVE_LEFT, MOVE_RIGHT, JUMP, ATTACK}
+}
 
 // La estructura InputManager se encarga de almacenar 
 type InputManager struct {
@@ -135,6 +139,8 @@ func (im *InputManager) IsActionJustPressed(action string) *Action {
 
     if inpututil.IsKeyJustPressed(key) {
         return &Action{action, 1.0}
+    } else {
+        return nil
     }
 }
 
