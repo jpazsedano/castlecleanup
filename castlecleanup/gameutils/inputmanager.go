@@ -1,4 +1,4 @@
-package inputmanager
+package gameutils
 
 import (
     "github.com/hajimehoshi/ebiten/v2"

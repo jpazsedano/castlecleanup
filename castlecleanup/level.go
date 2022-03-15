@@ -12,6 +12,8 @@ import (
     "github.com/hajimehoshi/ebiten/v2"
     "github.com/hajimehoshi/ebiten/v2/inpututil"
     "github.com/hajimehoshi/ebiten/v2/ebitenutil"
+
+    "github.com/jpazsedano/castlecleanup/gameutils"
 )
 
 // TODO: Eliminar y permitir escoger tamaño de nivel por parámetro, creando un nivel vacío
@@ -66,7 +68,7 @@ func MakeLevel(tilemapRes string, debug bool) (*Level, error) {
     tilemapImage := ebiten.NewImageFromImage(img)
     tilemap := Tilemap{tilemapImage, tileValues, 32, 19, -1}
     controller := MakeInputController()
-    entityManager, _ := MakeEntityManager()
+    entityManager, _ := gameutils.MakeEntityManager()
     
     var level *Level = &Level{
         tiles: tilemap,

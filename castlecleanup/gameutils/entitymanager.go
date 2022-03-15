@@ -1,5 +1,5 @@
 
-package main
+package gameutils
 
 import (
     "github.com/hajimehoshi/ebiten/v2"
@@ -8,8 +8,6 @@ import (
     "image"
     _ "image/png"
     "bytes"
-
-    "github.com/jpazsedano/castlecleanup/inputmanager"
 )
 
 const (
@@ -303,7 +301,7 @@ func (s *SolidSprite) Move(x float64, y float64) {
 type ControlableSprite interface {
     // Encola acciones para ser realizadas todas a la vez cuando se llame a
     // la función Update
-    EnqueueAction(action inputmanager.Action) bool
+    EnqueueAction(action Action) bool
 
     // Devuelve una lista de las acciones posibles.
     GetActions() []string
@@ -320,10 +318,10 @@ type Character struct {
     // Lo definimos como estático porque 
     possibleActions []string
 
-    actionQueue []inputmanager.Action
+    actionQueue []Action
 }
 
-func (c *Character) EnqueueAction(action inputmanager.Action) bool {
+func (c *Character) EnqueueAction(action Action) bool {
     c.actionQueue = append(c.actionQueue, action)
     return true // TODO: Devolver valor según el resultado.
 }
