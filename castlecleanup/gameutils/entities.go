@@ -100,38 +100,68 @@ func (s *SolidSprite) Move(x float64, y float64) {
     s.SetPosition(currentX + x, currentY + y)
 }
 
-// Las estructuras que implementen esta interfaz podrán recibir eventos de
-// control.
-type ControlableSprite interface {
-    // Encola acciones para ser realizadas todas a la vez cuando se llame a
-    // la función Update
-    EnqueueAction(action Action) bool
 
-    // Devuelve una lista de las acciones posibles.
-    GetActions() []string
+// Construye un personaje con las funciones básicas.
+func MakeCharacter(sprite SolidSprite, health int, moveSpeed, airFactor
+    jumpForce float64, canGrab, canShoot bool) *Player {
+    
+    return &Character{sprite, health, health, moveSpeed, airFactor,
+        jumpForce, canGrab, canShoot, []Action{}}
 }
 
-
-// Construye un personaje a partir de un SolidSprite
-func MakeCharacter(sprite SolidSprite) {
-    //= []string{"moveX", "moveY"}
-}
-
+// Character representa cualquier personaje que pueda moverse, saltar y
+// atacar.
 type Character struct {
     SolidSprite
 
-    // Lo definimos como estático porque 
-    possibleActions []string
+    health int
+    maxHealth int
+    moveSpeed float64 // Velocidad de movimiento
+    airFactor float64 // Reducción de velocidad al estar en el aire
+    jumpForce float64 // "fuerza" del salto. Define la altura
+    canGrab bool // Define si puede agarrar cajas o bombas
+    canShoot bool // Define si puede disparar cañones.
 
-    actionQueue []Action
+    actionQueue []Action // Acciones que el personaje debe hacer en el próximo frame (si puede)
 }
 
-func (c *Character) EnqueueAction(action Action) bool {
-    c.actionQueue = append(c.actionQueue, action)
-    return true // TODO: Devolver valor según el resultado.
+func (c *Character) Update() error {
+    // Llamamos a la función Update de la superclase ya que será necesario en
+    // un futuro para las animaciones
+    c.SolidSprite.Update()
+
+    // Comprobamos acciones. De momento sólo movimiento horizontal, ya que aún no
+    // hay físicas ni animaciones.
+    for _, action := range c.actionQueue {
+        // TODO: Completar
+        switch action.action {
+        case MOVE_LEFT:
+            c.Move(-c.MoveSpeed, 0)
+        case MOVE_RIGHT:
+            c.Move(c.MoveSpeed, 0)
+        }
+    }
 }
 
-func (c *Character) GetActions() []string {
-    return c.possibleActions
+func MakePlayer(sprite SolidSprite, health int, moveSpeed, airFactor, jumpForce float64,
+    iManager InputManager) *Player {
+    character := MakeCharacter(sprite, health, moveSpeed, airFactor, jumpForce, false, false)
+    // Queremos pasar el valor, no el puntero. ¿Se hace así?
+    return &Player{*character, iManager}
 }
 
+type Player struct {
+    Character
+
+    iManager InputManager
+}
+
+func (p *Player) Update() error {
+    // Capturamos eventos y actualizamos el personaje.
+    if a := p.iManager.IsActionPressed(MOVE_LEFT); a != nil {
+        p.Character.actionQueue = append(p.Character.actionQueue, a)
+    }
+    if a := p.iManager.IsActionPressed(MOVE_RIGHT); a != nil {
+        p.Character.actionQueue = append(p.Character.actionQueue, a)
+    }
+}

@@ -80,18 +80,31 @@ Para implementar estas funcionalidades se utilizarán las siguientes estructuras
 
 - `Sprite`: Implementa el dibujado en pantalla, con animaciones de cambio de sprite según
 el estado solicitado.
-- `SolidSprite`: Subclase de Sprite que, además, tiene una hitbox e implementa la
-interfaz `Solid` del motor de físicas, la cual básicamente da acceso al hitbox y recibe
-los eventos de colisión con el entorno y las otras entidades. También puede ser desplazado
-por las físicas.
-- `ControlableSprite`: Subclase de Sprite que, además, incluye una serie de acciones que
-afectan al movimiento y estado de la entidad. Una clase controladora puede recibir las
-acciones disponibles y actuar sobre ellas.
-Genralmente un controlador va a ser o bien un controlador de input (que se encargará de
-detectar cual es el input apropiado, teclado o mando) que lanzará acciones asignadas a cada
-botón o tecla, o bien un controlador de IA, que según el estado del juego decidirá hacer
-acciones también predefinidas. Por lo que leer las acciones disponibles no tiene mucho
-sentido más allá de evitar errores.
+- `SolidSprite`: Subclase de Sprite que, además, tiene una hitbox e implementa las físicas.
+Pone a disposición una serie de métodos para mover al objeto y lo mueve teniendo en cuenta
+que sólo puede moverse si no colisiona con nada.
+    - Físicas más avanzadas (como inercia o posibilidad de ser empujado por otro objeto)
+    no están dentro del scope de esta clase.
+- `Character`: El jugador y los enemigos tienen diferencias. Las mas notables son las
+acciones que se pueden realizar (los enemigos pueden agarrar y lanzar cajas y disparar
+cañones) y la manerar de decidir qué acciones realizar (mediante input de controlador o
+IA). Sin embargo también tienen funcionalidades en común.
+    - Desplazamiento y salto.
+    - Ataque básico
+    - Recepción de daño y cuenta de la vida.
+La clase `Character` se encarga de implementar estas funcionalidades básicas. También lanzar
+cajas, y disparar cañones, que se puede desactivar mediante unos flags si el personaje no
+puede hacerlo.
+- `Player`: El jugador implementa la diferencia principal: el control del personaje y la
+desactivación de las habilidades que no tiene. Es decir, el constructor marca los flags
+y en el método update, captura los eventos de entrada y los pasa a Character.
+- `Pig`: El cerdo básico implementa la IA que le permite decidir si ha visto al jugador,
+en base a lo cual decidirá si patruyar su zona o perseguir y atacar al jugador (y cómo
+atacarle). Se puede parametrizar para que vaya a buscar bombas o cajas a un montón.
+- `KingPig`: A diferencia de los cerdos normales, el cerdo rey es el jefe, por lo que
+cuenta con patrones de comportamiento y es capaz de lanzar eventos que afectan al nivel
+(aparición de nuevos enemigos y cambios en el escenario. Además de movimientos imposibles
+para un personaje normal)
 
 Las clases descritas son aquellas necesarias para la funcionalidad compartida. Para
 funcionalidad más específica cada entidad del juego tendrá su propia clase.
