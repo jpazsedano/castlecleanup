@@ -13,13 +13,15 @@ import (
 const (
     ENTITY_BOX int = iota
     ENTITY_BOMB
+    ENTITY_PLAYER
 )
 
-const NUM_ENTITIES = 2
+const NUM_ENTITIES = 3
 
 var ENTITY_ASSIGNATIONS = map[int]string{
     ENTITY_BOX: BOX_IDLE,
     ENTITY_BOMB: BOMB_OFF,
+    ENTITY_PLAYER: KING_FALL, // Por ahora ponemos la imagen del rey cayendo
 }
 
 // EntityManager se encarga de lanzar las llamadas a Update y Draw de las
@@ -34,6 +36,8 @@ type EntityManager struct {
     entitySelected int
 
     lastid int
+
+    iManager *InputManager // Para las entidades que escuchan al input
 }
 
 // Esta función está pensada para crear una imagen de edición
@@ -62,6 +66,7 @@ func MakeEntityManager() (*EntityManager, error) {
     for id, resource := range ENTITY_ASSIGNATIONS {
         em.availableEntities[id] = createEditImage(em.resources[resource])
     }
+    em.iManager = MakeDefaultInputManager()
 
     return em, nil
 }
@@ -70,7 +75,7 @@ func MakeEntityManager() (*EntityManager, error) {
 
 // Esta función crea una entidad base con recurso de imagen
 // compartido para ser utilizada en diferentes subclases
-func (em *EntityManager) CreateEntity(x int, y int, resource string) (BaseEntity, error) {
+func (em *EntityManager) CreateSprite(x int, y int, resource string) (BaseEntity, error) {
     var res *ebiten.Image
     var ok bool
     res, ok = em.resources[resource]
@@ -83,7 +88,7 @@ func (em *EntityManager) CreateEntity(x int, y int, resource string) (BaseEntity
 }
 
 // Registra una entidad en el manager. Normalmente es una subclase que ha utilizado
-// la clase generada por CreateEntity como composite.
+// la clase generada por CreateSprite como composite.
 func (em *EntityManager) SpawnEntity(entity BaseEntity) int {
     em.lastid++
     em.entities[em.lastid] = entity
@@ -152,21 +157,28 @@ func (em *EntityManager) SpawnByType(x int, y int, e_type int) error {
     switch e_type {
     case ENTITY_BOX:
         // La caja será un SolidSprite cuando esté implementado, por el momento sólo es una entidad normal
-        entity, err := em.CreateEntity(x, y, BOX_IDLE)
+        entity, err := em.CreateSprite(x, y, BOX_IDLE)
         if err != nil {
             return err
         }
         imgW, imgH := entity.GetImage().Size()
+        // Center the image on the cursor
         entity.Move(float64(-imgW/2), float64(-imgH/2))
         em.SpawnEntity(entity)
     case ENTITY_BOMB:
-        entity, err := em.CreateEntity(x, y, BOMB_OFF)
+        entity, err := em.CreateSprite(x, y, BOMB_OFF)
         if err != nil {
             return err
         }
         imgW, imgH := entity.GetImage().Size()
+        // Center the image on the cursor.
         entity.Move(float64(-imgW/2), float64(-imgH/2))
         em.SpawnEntity(entity)
+    case ENTITY_PLAYER:
+        // De momento hardcodeamos el tamaño del hitbox al que sabemos que tiene el sprite.
+        player := MakePlayer(em.resources[KING_FALL], float64(x-(78/2)), float64(y-(58/2)),
+            0, 0, 78, 58, 100, 1.0, 0.8, 2.0, em.iManager)
+        em.SpawnEntity(player)
     }
     return nil
 }

@@ -3,6 +3,7 @@ package main
 import (
     "github.com/hajimehoshi/ebiten/v2"
     "log"
+    "github.com/jpazsedano/castlecleanup/gameutils"
 )
 
 const (
@@ -61,7 +62,7 @@ func main() {
     ebiten.SetWindowTitle("Castle Cleanup")
     
     // TODO: Parametrize
-    scene, err := MakeLevel(CASTLE_TILEMAP, true)
+    scene, err := MakeLevel(gameutils.CASTLE_TILEMAP, true)
     if err != nil {
         log.Fatal(err)
     }

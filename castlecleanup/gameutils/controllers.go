@@ -1,10 +1,5 @@
 package gameutils
 
-// Puede que Tilemap haya que meterlo aquí
-import (
-    "github.com/jpazsedano/castlecleanup"
-)
-
 /* En esta clase se implementa un controlador 
  */
 

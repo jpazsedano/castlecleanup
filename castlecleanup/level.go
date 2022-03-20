@@ -44,7 +44,7 @@ const (
 // de la lógica de los menús, por ejemplo
 type Level struct {
     tiles Tilemap
-    enManager EntityManager
+    enManager gameutils.EntityManager
     inputController InputController
     debug bool
     editMode bool
@@ -55,7 +55,7 @@ type Level struct {
 // Esta función carga los assets necesarios y construye el nivel.
 // En niveles grandes puede que necesite una pantalla de carga.
 func MakeLevel(tilemapRes string, debug bool) (*Level, error) {
-    tilemapBytes, ok := AM_RESOURCES[tilemapRes] ;
+    tilemapBytes, ok := gameutils.AM_RESOURCES[tilemapRes]
     if !ok {
         return nil, errors.New("Resource not found")
     }
@@ -136,8 +136,6 @@ func (l *Level) processEditInput() {
 }
 
 func (l *Level) Update() error {
-    l.inputController.CaptureInput()
-
     // Activamos o desactivamos el modo edición
     if l.debug && inpututil.IsKeyJustPressed(ebiten.KeyF1) {
         l.editMode = !l.editMode
@@ -172,6 +170,8 @@ func (l *Level) Update() error {
     // Si estamos en modo edición, procesamos la entrada de edición.
     if l.editMode {
         l.processEditInput()
+    } else {
+        l.enManager.Update()
     }
 
     return nil

@@ -2,6 +2,7 @@ package gameutils
 
 import (
     "github.com/hajimehoshi/ebiten/v2"
+    "image"
 )
 
 // Interfaz básica de Entidad
@@ -62,10 +63,9 @@ func (e *Sprite) GetImage() *ebiten.Image {
 
 // Construye un SolidSprite con su hitbox a partir de un Sprite y las
 // coordenadas de su rectángulo.
-func MakeSolidSpite(sprite Sprite, x0, y0, x1, y1 int) *SolidSprite {
-    x := int(sprite.X)
-    y := int(sprite.Y)
-    hBox := image.Rect(x0 + x, y0 + y, x1 + x, y1 + y)
+func MakeSolidSprite(img *ebiten.Image, x, y float64, x0, y0, x1, y1 int) *SolidSprite {
+    sprite := Sprite{img, x, y}
+    hBox := image.Rect(x0 + int(x), y0 + int(y), x1 + int(x), y1 + int(y))
 
     return &SolidSprite{sprite, hBox}
 }
@@ -102,10 +102,12 @@ func (s *SolidSprite) Move(x float64, y float64) {
 
 
 // Construye un personaje con las funciones básicas.
-func MakeCharacter(sprite SolidSprite, health int, moveSpeed, airFactor
-    jumpForce float64, canGrab, canShoot bool) *Player {
+func MakeCharacter(img *ebiten.Image, x, y float64, x0, y0, x1, y1 int, health int,
+    moveSpeed, airFactor, jumpForce float64, canGrab, canShoot bool) *Character {
+    sprite := MakeSolidSprite(img, x, y, x0, y0, x1, y1)
+
     
-    return &Character{sprite, health, health, moveSpeed, airFactor,
+    return &Character{*sprite, health, health, moveSpeed, airFactor,
         jumpForce, canGrab, canShoot, []Action{}}
 }
 
@@ -133,19 +135,24 @@ func (c *Character) Update() error {
     // Comprobamos acciones. De momento sólo movimiento horizontal, ya que aún no
     // hay físicas ni animaciones.
     for _, action := range c.actionQueue {
-        // TODO: Completar
+        // TODO: Completar con el resto de acciones (salto, ataque, agarrar y disparar)
         switch action.action {
         case MOVE_LEFT:
-            c.Move(-c.MoveSpeed, 0)
+            c.Move(-c.moveSpeed, 0)
         case MOVE_RIGHT:
-            c.Move(c.MoveSpeed, 0)
+            c.Move(c.moveSpeed, 0)
         }
     }
+    // Vaciamos la cola de acciones.
+    c.actionQueue = []Action{}
+    // Completar con la comprobación de colisión con otras entidades y si hacen daño.
+    // La detección de muerte debe ser realizada por las estructuras contenedoras.
+    return nil
 }
 
-func MakePlayer(sprite SolidSprite, health int, moveSpeed, airFactor, jumpForce float64,
-    iManager InputManager) *Player {
-    character := MakeCharacter(sprite, health, moveSpeed, airFactor, jumpForce, false, false)
+func MakePlayer(img *ebiten.Image, x, y float64, x0, y0, x1, y1, health int,
+        moveSpeed, airFactor, jumpForce float64, iManager *InputManager) *Player {
+    character := MakeCharacter(img, x, y, x0, y0, x1, y1, health, moveSpeed, airFactor, jumpForce, false, false)
     // Queremos pasar el valor, no el puntero. ¿Se hace así?
     return &Player{*character, iManager}
 }
@@ -153,15 +160,18 @@ func MakePlayer(sprite SolidSprite, health int, moveSpeed, airFactor, jumpForce 
 type Player struct {
     Character
 
-    iManager InputManager
+    iManager *InputManager
 }
 
 func (p *Player) Update() error {
+    // TODO: Añadir salto y ataque.
     // Capturamos eventos y actualizamos el personaje.
     if a := p.iManager.IsActionPressed(MOVE_LEFT); a != nil {
-        p.Character.actionQueue = append(p.Character.actionQueue, a)
+        p.Character.actionQueue = append(p.Character.actionQueue, *a)
     }
     if a := p.iManager.IsActionPressed(MOVE_RIGHT); a != nil {
-        p.Character.actionQueue = append(p.Character.actionQueue, a)
+        p.Character.actionQueue = append(p.Character.actionQueue, *a)
     }
+
+    return p.Character.Update()
 }
